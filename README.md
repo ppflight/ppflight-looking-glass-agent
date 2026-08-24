@@ -1,39 +1,31 @@
-# PPFlight Looking Glass Agent
+# PPFlight Looking Glass Agent（网络探测代理）
 
-The PPFlight Looking Glass Agent runs network probes in a PPFlight region. It
-accepts no inbound connections: it binds once with an ADMIN-generated code, then
-uses outbound HTTPS to send heartbeats, claim jobs and return sanitized results.
+PPFlight Looking Glass Agent 用于在 PPFlight 的各个区域执行网络探测任务。它不接受任何入站连接：首次使用 ADMIN 生成的一次性绑定码完成绑定，之后仅通过出站 HTTPS 发送心跳、领取任务并返回经过安全处理的结果。
 
-The agent is intended for an isolated, low-privilege VM in the same region as the
-network being measured. Do **not** install it on a Proxmox management host when a
-small dedicated VM is available.
+Agent 应部署在被测网络所在区域内的一台隔离、低权限虚拟机中。如果能够提供小型专用虚拟机，**请勿**将其安装在 Proxmox 管理宿主机上。
 
-## Supported systems
+## 支持的系统
 
-- Debian and Ubuntu (`apt`)
-- RHEL, Rocky Linux, AlmaLinux and CentOS Stream (`dnf`)
-- Older CentOS installations exposing required packages through `yum`
-- systemd and Python 3.9 or newer
+- Debian 和 Ubuntu（`apt`）
+- RHEL、Rocky Linux、AlmaLinux 和 CentOS Stream（`dnf`）
+- 能通过 `yum` 提供所需软件包的旧版 CentOS
+- systemd 和 Python 3.9 或更高版本
 
-The installer selects `apt`, `dnf` or `yum` and installs Python, `ping`,
-`traceroute`, `mtr` and CA certificates. On RHEL-family systems it attempts to
-install Python 3.9 when the default Python is older.
+安装程序会自动选择 `apt`、`dnf` 或 `yum`，并安装 Python、`ping`、`traceroute`、`mtr` 和 CA 证书。在 RHEL 系列系统中，如果默认 Python 版本过低，安装程序会尝试安装 Python 3.9。
 
-## GitHub installation
+## 从 GitHub 安装
 
-After this directory has been published as a repository:
+该仓库目前是私有仓库，目标服务器需要先获得 GitHub 访问权限，然后执行：
 
 ```bash
-git clone https://github.com/PPFlight/looking-glass-agent.git
-cd looking-glass-agent
+git clone https://github.com/ppflight/ppflight-looking-glass-agent.git
+cd ppflight-looking-glass-agent
 sudo ./install.sh
 ```
 
-`install.sh` safely prompts for the one-time binding code at the end. Input is
-hidden and is piped to the agent over standard input, so it is not stored in shell
-history or exposed as a command-line argument.
+`install.sh` 会在安装结束时安全地提示输入一次性绑定码。输入内容不会显示，并通过标准输入传递给 Agent，因此不会保存在 Shell 历史记录中，也不会暴露为命令行参数。
 
-For unattended installation, save only the one-time code in a root-readable file:
+如需无人值守安装，请将一次性绑定码单独保存到仅 root 可读的文件中：
 
 ```bash
 chmod 600 /root/ppflight-lg-binding-code
@@ -41,7 +33,7 @@ sudo ./install.sh --bind-code-file /root/ppflight-lg-binding-code
 rm -f /root/ppflight-lg-binding-code
 ```
 
-To install without binding or starting the service:
+如需只安装、暂不绑定和启动服务：
 
 ```bash
 sudo ./install.sh --non-interactive
@@ -49,25 +41,19 @@ sudo nano /etc/ppflight-looking-glass/config.json
 sudo /opt/ppflight-looking-glass/bind.sh
 ```
 
-The repository itself contains no token, secret or binding code. Binding stores
-the resulting agent token as `/var/lib/ppflight-looking-glass/state.json`, mode
-`0600`, owned by the non-root `ppflight-lg` account.
+仓库本身不包含令牌、密钥或绑定码。绑定成功后，Agent 令牌会保存到 `/var/lib/ppflight-looking-glass/state.json`，文件权限为 `0600`，所有者为非 root 账户 `ppflight-lg`。
 
-## Configuration
+## 配置
 
-The installer copies `config.example.json` to:
+安装程序会将 `config.example.json` 复制到：
 
 ```text
 /etc/ppflight-looking-glass/config.json
 ```
 
-The production API URL is preconfigured. `agent_name` and `location` deliberately
-default to `unconfigured` and are only local informational placeholders. The
-one-time binding code determines the real ADMIN node identity, code, region and
-public visibility; an Agent cannot choose or overwrite those properties. Supported
-values for polling and request timeouts are deliberately bounded by the agent.
+配置文件已预设生产 API 地址。`agent_name` 和 `location` 默认值有意设置为 `unconfigured`，它们只是在本地显示的说明性占位符。一次性绑定码决定真实的 ADMIN 节点身份、节点代码、区域和公开状态；Agent 无权选择或覆盖这些属性。轮询间隔和请求超时只能使用 Agent 允许的受限范围。
 
-Validate an installation without making an API request:
+无需发起 API 请求即可检查本地安装：
 
 ```bash
 sudo -u ppflight-lg /opt/ppflight-looking-glass/python3 \
@@ -75,122 +61,86 @@ sudo -u ppflight-lg /opt/ppflight-looking-glass/python3 \
   --config /etc/ppflight-looking-glass/config.json check
 ```
 
-Service diagnostics:
+查看服务诊断信息：
 
 ```bash
 ag
 ```
 
-The installer adds `/usr/local/bin/ag`. Running `ag` opens an interactive Agent
-console showing service state, version/platform, binding state, node ID, API base,
-connection check, probe binaries and immutable safety ceilings. It never displays
-the bearer token, visitor IP hashes, targets, probe output or raw journal messages.
+安装程序会创建 `/usr/local/bin/ag`。运行 `ag` 后会打开交互式 Agent 控制台，显示服务状态、版本与平台、绑定状态、节点 ID、API 地址、连接检查结果、探测程序和不可修改的安全上限。控制台绝不会显示 Bearer Token、访客 IP 指纹、探测目标、探测输出或原始日志内容。
 
-Non-interactive commands are also available:
+也可以使用以下非交互命令：
 
 ```bash
-ag status     # local service, binding and safety status
-ag summary    # safe ADMIN node and anonymous 24-hour counters
-ag check      # local status plus API connection summary
-ag logs       # categorized journal counts; raw messages remain hidden
-ag bind       # securely bind or rebind with a one-time ADMIN code
-ag version
+ag status     # 查看本地服务、绑定状态和安全限制
+ag summary    # 查看安全的 ADMIN 节点信息和匿名化的 24 小时统计
+ag check      # 查看本地状态和 API 连接摘要
+ag logs       # 查看分类后的日志数量，不显示原始日志内容
+ag bind       # 使用 ADMIN 一次性绑定码安全绑定或重新绑定
+ag version    # 查看版本信息
 ```
 
-`ag summary` uses `POST /agent/control/summary`. Only a fixed allowlist from
-`data.node` and `data.stats` is rendered: aggregate 24-hour totals, known status
-counts, anonymous visitor-fingerprint count and security-rejection count. If an
-older WWW deployment does not provide the endpoint, the console reports that
-cleanly and keeps all local status commands usable.
+`ag summary` 调用 `POST /agent/control/summary`。控制台只会渲染 `data.node` 和 `data.stats` 固定白名单中的字段，包括 24 小时聚合总数、已知状态计数、匿名访客指纹数量和安全拒绝数量。如果旧版 WWW 尚未提供该接口，控制台会明确提示，同时保持所有本地状态命令可用。
 
-The console may also display `active_ip_block_count`, which is only an aggregate
-number. Exact blocked IP addresses are restricted to PPFlight Super Admin and are
-never sent to, stored by, or displayed on an Agent node.
+控制台也可能显示 `active_ip_block_count`，但它只是一个汇总数字。被封禁的具体 IP 地址仅限 PPFlight 超级管理员查看，绝不会发送到 Agent 节点，也不会由 Agent 节点保存或显示。
 
-## API contract
+## API 协议
 
-All requests and responses are JSON and use `Cache-Control: no-store`. The agent
-uses these fixed endpoints beneath `api_base_url`:
+所有请求和响应均使用 JSON，并设置 `Cache-Control: no-store`。Agent 只会使用 `api_base_url` 下的以下固定接口：
 
-| Purpose | Method and path | Authentication |
+| 用途 | 请求方法与路径 | 身份验证方式 |
 | --- | --- | --- |
-| One-time bind | `POST /agents/bind` | `binding_code` in JSON |
-| Heartbeat | `POST /agent/heartbeat` | Bearer agent token |
-| Claim work | `POST /agent/jobs/claim` | Bearer agent token |
-| Complete work | `POST /agent/jobs/{uuid}/complete` | Bearer agent token |
-| Safe console summary | `POST /agent/control/summary` | Bearer agent token |
+| 一次性绑定 | `POST /agents/bind` | JSON 中的 `binding_code` |
+| 发送心跳 | `POST /agent/heartbeat` | Agent Bearer Token |
+| 领取任务 | `POST /agent/jobs/claim` | Agent Bearer Token |
+| 提交任务结果 | `POST /agent/jobs/{uuid}/complete` | Agent Bearer Token |
+| 获取安全控制台摘要 | `POST /agent/control/summary` | Agent Bearer Token |
 
-The bind response contains `agent_token` and `node.id`. A claimed job contains
-`id`, `method`, `target`, `resolved_addresses`, `resolution_fingerprint` and its
-execution contract. API methods are `ping`, `trace` and `mtr`; `trace` is executed
-locally with the `traceroute` binary. Any arguments supplied by the server are
-ignored; commands are constructed from fixed local argument arrays. Successful
-completion sends `status: completed`, the verified resolution proof and
-`result.output` as a bounded string array. Failures send `status: failed` with a
-structured error code and message.
+绑定响应包含 `agent_token` 和 `node.id`。领取到的任务包含 `id`、`method`、`target`、`resolved_addresses`、`resolution_fingerprint` 及其执行约束。API 支持的方法为 `ping`、`trace` 和 `mtr`；其中 `trace` 在本地使用 `traceroute` 程序执行。
 
-## Security boundaries
+服务器提供的任何附加参数都会被忽略，所有命令都由本地固定参数数组构造。任务成功后，Agent 会提交 `status: completed`、已验证的 DNS 解析证明，以及经过长度限制的字符串数组 `result.output`。任务失败时会提交 `status: failed`，并附带结构化错误代码和错误消息。
 
-The agent enforces the following independently from the WWW API:
+## 安全边界
 
-- target must be exactly one domain, IPv4 address or IPv6 address;
-- URLs, ports, paths, zone identifiers and command parameters are rejected;
-- loopback, private, link-local, multicast, reserved and metadata addresses are
-  rejected;
-- every DNS answer must be public; DNS is resolved twice in killable isolated
-  resolver processes immediately before the probe, both answer sets must match,
-  and the command receives only the pinned IP;
-- subprocesses always use `shell=False`, a fixed environment and fixed argv;
-- ping is fixed at 5 packets, trace at 20 hops, and MTR at 5 cycles/20 hops
-  (below the 10-cycle security ceiling) with a non-root-safe 1-second interval;
-- the claim HTTP round trip, DNS validation and probe share the server contract's
-  15-second monotonic budget; execution stops about one second early to reserve
-  first-completion transport time, while the server's `deadline_at` is validated
-  but not compared to the node wall clock (avoiding clock-skew false expiry);
-- stdout and stderr are captured incrementally with a hard 64 KiB memory ceiling;
-  the process group is killed as soon as that ceiling is reached, and non-public
-  hops in the bounded result are replaced with `private hop`;
-- no more than four jobs run concurrently;
-- results and visitor targets are never queued or persisted on agent disk.
+除 WWW API 的安全控制外，Agent 还会独立强制执行以下限制：
 
-Completion delivery is reliability-bounded: a network error or HTTP 5xx response
-is retried from memory up to three times with short backoff and a two-second HTTP
-timeout per attempt. HTTP 4xx responses are terminal. An undelivered completion
-continues to occupy one of the four fixed Agent slots, so an API outage cannot
-create an unbounded work queue. Completion payloads are never written to disk or
-included in logs, and the backoff uses the stop-aware main loop rather than a
-blocking sleep.
+- 探测目标必须且只能是一个域名、IPv4 地址或 IPv6 地址；
+- 拒绝 URL、端口、路径、区域标识符和命令参数；
+- 拒绝回环、私有、链路本地、组播、保留地址和云元数据地址；
+- DNS 返回的每一个地址都必须是公网地址；探测前会在可强制终止的隔离解析进程中连续解析两次，两次结果必须完全一致，命令最终只接收锁定后的 IP 地址；
+- 子进程始终使用 `shell=False`、固定环境变量和固定参数数组；
+- Ping 固定最多发送 5 个数据包，Trace 固定最多 20 跳，MTR 固定为 5 轮、最多 20 跳（低于 10 轮的安全上限），并使用非 root 用户可执行的 1 秒间隔；
+- 领取任务的 HTTP 往返、DNS 验证和探测过程共同使用服务器约定的 15 秒单调时钟预算；执行会提前约 1 秒结束，为首次提交结果预留网络时间。Agent 会验证服务器的 `deadline_at`，但不会将其与节点本地时钟直接比较，以避免时钟偏差造成误判超时；
+- 标准输出和标准错误会被增量读取，并设置 64 KiB 的严格内存上限；一旦达到上限就立即终止整个进程组，结果中的非公网跳点会替换为 `private hop`；
+- 单个节点最多同时执行 4 个任务；
+- 任务结果和访客目标不会进入磁盘队列，也不会持久化到 Agent 磁盘。
 
-The WWW API remains responsible for controls the agent cannot enforce: visitor IP
-rate limiting (5 requests/minute), per-target limits, global/node admission,
-`no-store` browser responses, audit policy, and deletion of target/result data
-after 24 hours.
+结果提交采用有界重试策略：网络错误或 HTTP 5xx 响应会从内存中最多重试 3 次，每次采用短暂退避，单次 HTTP 超时为 2 秒。HTTP 4xx 响应被视为终止性错误，不会重试。尚未成功提交的任务会继续占用 4 个固定 Agent 并发槽位中的一个，因此 API 故障不会产生无限增长的工作队列。结果载荷不会写入磁盘或日志，退避等待由可响应停止信号的主循环管理，不使用阻塞式睡眠。
 
-The systemd unit runs as `ppflight-lg`, grants only `CAP_NET_RAW`, makes the OS
-read-only to the process except for its state directory, and restricts available
-address families.
+WWW API 仍负责执行 Agent 无法独立实施的控制：访客 IP 限流（每分钟 5 次）、目标限流、全局及节点准入、浏览器响应的 `no-store`、审计策略，以及在 24 小时后删除目标和结果数据。
 
-## Development and tests
+systemd 服务以 `ppflight-lg` 用户运行，仅授予 `CAP_NET_RAW` 权限。除自身状态目录外，操作系统文件对该进程只读，并限制其可使用的地址族。
 
-No third-party Python packages are used.
+## 开发与测试
+
+Agent 不依赖第三方 Python 软件包。
 
 ```bash
 python3 -m unittest discover -s tests -v
-shellcheck install.sh bind.sh uninstall.sh
+shellcheck install.sh bind.sh uninstall.sh ag
 ```
 
-GitHub Actions runs the unit tests against Python 3.9, 3.11 and 3.13 and checks
-all shell scripts with ShellCheck.
+GitHub Actions 会分别使用 Python 3.9、3.11 和 3.13 运行单元测试，并使用 ShellCheck 检查全部 Shell 脚本。
 
-## Uninstall
+## 卸载
 
-Keep local configuration and token state:
+保留本地配置和令牌状态：
 
 ```bash
 sudo /opt/ppflight-looking-glass/uninstall.sh
 ```
 
-Permanently remove the installation, configuration, token and service user:
+永久删除程序、配置、令牌和服务用户：
 
 ```bash
 sudo /opt/ppflight-looking-glass/uninstall.sh --purge
