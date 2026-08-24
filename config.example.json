@@ -1,0 +1,9 @@
+{
+  "api_base_url": "https://www.ppflight.com/api/looking-glass/v1",
+  "agent_name": "unconfigured",
+  "location": "unconfigured",
+  "poll_interval_seconds": 2,
+  "heartbeat_interval_seconds": 30,
+  "request_timeout_seconds": 10,
+  "state_path": "/var/lib/ppflight-looking-glass/state.json"
+}

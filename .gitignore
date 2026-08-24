@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.coverage
+.pytest_cache/
+.idea/
+.vscode/
+config.json
+state.json
+*.token
+*.code
+*.secret

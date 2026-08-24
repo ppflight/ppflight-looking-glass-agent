@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# shellcheck disable=SC2034  # ownership marker used by install/uninstall scripts
+PPFLIGHT_LOOKING_GLASS_AG_WRAPPER=1
+
+APP_DIR="/opt/ppflight-looking-glass"
+CONFIG_FILE="/etc/ppflight-looking-glass/config.json"
+
+if [[ ! -x "${APP_DIR}/python3" || ! -f "${APP_DIR}/ag.py" ]]; then
+  echo "PPFlight Looking Glass Agent is not installed correctly." >&2
+  exit 1
+fi
+
+if [[ "${EUID}" -eq 0 ]]; then
+  exec "${APP_DIR}/python3" "${APP_DIR}/ag.py" --config "${CONFIG_FILE}" "$@"
+fi
+
+if ! command -v sudo >/dev/null 2>&1; then
+  echo "The Agent console needs root access to read protected binding state." >&2
+  exit 1
+fi
+
+exec sudo -- "${APP_DIR}/python3" "${APP_DIR}/ag.py" --config "${CONFIG_FILE}" "$@"
