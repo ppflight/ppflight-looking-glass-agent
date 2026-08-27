@@ -67,7 +67,7 @@ sudo -u ppflight-lg /opt/ppflight-looking-glass/python3 \
 ag-lg
 ```
 
-安装程序会创建 `/usr/local/bin/ag-lg`。运行 `ag-lg` 后会打开中文交互式 Agent 控制台，显示服务状态、版本与平台、绑定状态、节点 ID、API 地址、连接检查结果、探测程序和不可修改的安全上限。控制台绝不会显示 Bearer Token、访客 IP 指纹、探测目标、探测输出或原始日志内容。升级安装时，安装程序只会删除带有 PPFlight 所有权标记的旧 `/usr/local/bin/ag`；其他软件的同名命令不会被修改。
+安装程序会创建 `/usr/local/bin/ag-lg`。运行 `ag-lg` 后会打开中文交互式 Agent 控制台，显示服务状态、版本与平台、绑定状态、节点 ID、API 地址、连接检查结果、探测程序和不可修改的安全上限。控制台会主动将标准输出和错误输出切换为 UTF-8，因此在默认终端编码为 `latin-1` 的系统上也能正常显示中文。控制台绝不会显示 Bearer Token、访客 IP 指纹、探测目标、探测输出或原始日志内容。升级安装时，安装程序只会删除带有 PPFlight 所有权标记的旧 `/usr/local/bin/ag`；其他软件的同名命令不会被修改。
 
 也可以使用以下非交互命令：
 

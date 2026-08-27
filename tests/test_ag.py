@@ -2,6 +2,7 @@ import contextlib
 import io
 import os
 import pathlib
+import subprocess
 import sys
 import unittest
 from unittest import mock
@@ -94,6 +95,27 @@ class ControlConsoleTests(unittest.TestCase):
         for command in ("status", "summary", "check", "logs", "bind", "version"):
             with self.subTest(command=command):
                 self.assertEqual(ag.parse_arguments([command]).command, command)
+
+    def test_console_forces_utf8_when_parent_requests_latin_1(self):
+        environment = os.environ.copy()
+        environment["PYTHONIOENCODING"] = "latin-1"
+        completed = subprocess.run(
+            [sys.executable, str(ROOT / "ag.py"), "--help"],
+            cwd=ROOT,
+            env=environment,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10,
+            check=False,
+        )
+
+        self.assertEqual(
+            completed.returncode,
+            0,
+            completed.stderr.decode("utf-8", errors="replace"),
+        )
+        self.assertIn("控制台", completed.stdout.decode("utf-8"))
 
     def test_distribution_uses_ag_lg_command_and_chinese_menu(self):
         wrapper = ROOT / "ag-lg"

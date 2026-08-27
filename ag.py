@@ -39,6 +39,19 @@ STAT_FIELDS = (
 STATUS_FIELDS = ("queued", "claimed", "completed", "failed", "expired")
 
 
+def configure_console_encoding() -> None:
+    """Render the Chinese console consistently even under a legacy locale."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if not callable(reconfigure):
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (LookupError, OSError, ValueError):
+            # Replaced or detached streams may not support reconfiguration.
+            continue
+
+
 def fixed_command(argv: list[str], timeout: int = 8) -> tuple[int, str]:
     try:
         completed = subprocess.run(
@@ -263,6 +276,7 @@ def parse_arguments(argv: Iterable[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: Iterable[str] | None = None) -> int:
+    configure_console_encoding()
     arguments = parse_arguments(argv)
     if arguments.command == "version":
         print(agent.VERSION)

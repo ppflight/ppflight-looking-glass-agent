@@ -35,7 +35,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable
 
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 DEFAULT_CONFIG = "/etc/ppflight-looking-glass/config.json"
 DEFAULT_STATE = "/var/lib/ppflight-looking-glass/state.json"
 ALLOWED_METHODS = frozenset({"ping", "trace", "mtr"})
