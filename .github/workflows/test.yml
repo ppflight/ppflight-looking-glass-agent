@@ -25,4 +25,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y shellcheck
-      - run: shellcheck install.sh bind.sh uninstall.sh ag
+      - run: shellcheck install.sh bind.sh uninstall.sh ag-lg

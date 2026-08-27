@@ -1,5 +1,6 @@
 import contextlib
 import io
+import os
 import pathlib
 import sys
 import unittest
@@ -44,7 +45,7 @@ class ControlConsoleTests(unittest.TestCase):
             }
         }
         message, summary = ag.fetch_summary(self.config)
-        self.assertEqual(message, "Connected")
+        self.assertEqual(message, "已连接")
         self.assertEqual(summary["node"], {"id": "node-safe", "code": "test", "name": "Test Node"})
         self.assertEqual(summary["stats"], {
             "total_24h": 7,
@@ -63,7 +64,7 @@ class ControlConsoleTests(unittest.TestCase):
         )
         message, summary = ag.fetch_summary(self.config)
         self.assertIsNone(summary)
-        self.assertIn("not available yet", message)
+        self.assertIn("尚未提供", message)
 
     @mock.patch.object(ag, "fixed_command")
     @mock.patch.object(ag.shutil, "which", return_value="/usr/bin/journalctl")
@@ -78,8 +79,8 @@ class ControlConsoleTests(unittest.TestCase):
         with contextlib.redirect_stdout(output):
             ag.print_log_diagnostics()
         rendered = output.getvalue()
-        self.assertIn("API communication errors", rendered)
-        self.assertIn("result delivery failures", rendered)
+        self.assertIn("API 通信错误", rendered)
+        self.assertIn("结果提交失败", rendered)
         self.assertNotIn("victim.example", rendered)
         self.assertNotIn("8.8.8.8", rendered)
         self.assertNotIn("secret-job-id", rendered)
@@ -93,6 +94,23 @@ class ControlConsoleTests(unittest.TestCase):
         for command in ("status", "summary", "check", "logs", "bind", "version"):
             with self.subTest(command=command):
                 self.assertEqual(ag.parse_arguments([command]).command, command)
+
+    def test_distribution_uses_ag_lg_command_and_chinese_menu(self):
+        wrapper = ROOT / "ag-lg"
+        self.assertTrue(wrapper.is_file())
+        self.assertTrue(os.access(wrapper, os.X_OK))
+        self.assertFalse((ROOT / "ag").exists())
+        self.assertIn("PPFLIGHT_LOOKING_GLASS_AG_WRAPPER=1", wrapper.read_text())
+
+        installer = (ROOT / "install.sh").read_text()
+        uninstaller = (ROOT / "uninstall.sh").read_text()
+        console = (ROOT / "ag.py").read_text()
+        self.assertIn('"${SOURCE_DIR}/ag-lg" "/usr/local/bin/ag-lg"', installer)
+        self.assertIn('remove_owned_console_wrapper "/usr/local/bin/ag-lg"', uninstaller)
+        self.assertIn('remove_owned_console_wrapper "/usr/local/bin/ag"', uninstaller)
+        self.assertIn("[1] 刷新", console)
+        self.assertIn("ag-lg status|summary|check|logs|bind|version", console)
+        self.assertNotIn("[1] Refresh", console)
 
 
 if __name__ == "__main__":

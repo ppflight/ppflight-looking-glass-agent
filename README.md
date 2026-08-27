@@ -64,23 +64,23 @@ sudo -u ppflight-lg /opt/ppflight-looking-glass/python3 \
 查看服务诊断信息：
 
 ```bash
-ag
+ag-lg
 ```
 
-安装程序会创建 `/usr/local/bin/ag`。运行 `ag` 后会打开交互式 Agent 控制台，显示服务状态、版本与平台、绑定状态、节点 ID、API 地址、连接检查结果、探测程序和不可修改的安全上限。控制台绝不会显示 Bearer Token、访客 IP 指纹、探测目标、探测输出或原始日志内容。
+安装程序会创建 `/usr/local/bin/ag-lg`。运行 `ag-lg` 后会打开中文交互式 Agent 控制台，显示服务状态、版本与平台、绑定状态、节点 ID、API 地址、连接检查结果、探测程序和不可修改的安全上限。控制台绝不会显示 Bearer Token、访客 IP 指纹、探测目标、探测输出或原始日志内容。升级安装时，安装程序只会删除带有 PPFlight 所有权标记的旧 `/usr/local/bin/ag`；其他软件的同名命令不会被修改。
 
 也可以使用以下非交互命令：
 
 ```bash
-ag status     # 查看本地服务、绑定状态和安全限制
-ag summary    # 查看安全的 ADMIN 节点信息和匿名化的 24 小时统计
-ag check      # 查看本地状态和 API 连接摘要
-ag logs       # 查看分类后的日志数量，不显示原始日志内容
-ag bind       # 使用 ADMIN 一次性绑定码安全绑定或重新绑定
-ag version    # 查看版本信息
+ag-lg status     # 查看本地服务、绑定状态和安全限制
+ag-lg summary    # 查看安全的 ADMIN 节点信息和匿名化的 24 小时统计
+ag-lg check      # 查看本地状态和 API 连接摘要
+ag-lg logs       # 查看分类后的日志数量，不显示原始日志内容
+ag-lg bind       # 使用 ADMIN 一次性绑定码安全绑定或重新绑定
+ag-lg version    # 查看版本信息
 ```
 
-`ag summary` 调用 `POST /agent/control/summary`。控制台只会渲染 `data.node` 和 `data.stats` 固定白名单中的字段，包括 24 小时聚合总数、已知状态计数、匿名访客指纹数量和安全拒绝数量。如果旧版 WWW 尚未提供该接口，控制台会明确提示，同时保持所有本地状态命令可用。
+`ag-lg summary` 调用 `POST /agent/control/summary`。控制台只会渲染 `data.node` 和 `data.stats` 固定白名单中的字段，包括 24 小时聚合总数、已知状态计数、匿名访客指纹数量和安全拒绝数量。如果旧版 WWW 尚未提供该接口，控制台会明确提示，同时保持所有本地状态命令可用。
 
 控制台也可能显示 `active_ip_block_count`，但它只是一个汇总数字。被封禁的具体 IP 地址仅限 PPFlight 超级管理员查看，绝不会发送到 Agent 节点，也不会由 Agent 节点保存或显示。
 
@@ -127,7 +127,7 @@ Agent 不依赖第三方 Python 软件包。
 
 ```bash
 python3 -m unittest discover -s tests -v
-shellcheck install.sh bind.sh uninstall.sh ag
+shellcheck install.sh bind.sh uninstall.sh ag-lg
 ```
 
 GitHub Actions 会分别使用 Python 3.9、3.11 和 3.13 运行单元测试，并使用 ShellCheck 检查全部 Shell 脚本。

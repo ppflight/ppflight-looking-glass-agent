@@ -32,10 +32,15 @@ rm -f -- \
   "${APP_DIR}/uninstall.sh" \
   "${APP_DIR}/config.example.json" \
   "${APP_DIR}/python3"
-if [[ -f /usr/local/bin/ag ]] && \
-   grep -Fq 'PPFLIGHT_LOOKING_GLASS_AG_WRAPPER=1' /usr/local/bin/ag; then
-  rm -f -- "/usr/local/bin/ag"
-fi
+remove_owned_console_wrapper() {
+  local path="$1"
+  if [[ -f "${path}" && ! -L "${path}" ]] && \
+     grep -Fq 'PPFLIGHT_LOOKING_GLASS_AG_WRAPPER=1' "${path}"; then
+    rm -f -- "${path}"
+  fi
+}
+remove_owned_console_wrapper "/usr/local/bin/ag-lg"
+remove_owned_console_wrapper "/usr/local/bin/ag"
 rmdir -- "${APP_DIR}" 2>/dev/null || true
 
 if [[ "${PURGE}" -eq 1 ]]; then

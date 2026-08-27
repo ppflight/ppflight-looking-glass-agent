@@ -56,7 +56,7 @@ if [[ "${EUID}" -ne 0 ]]; then
   exit 1
 fi
 
-for required in agent.py ag.py ag bind.sh uninstall.sh config.example.json; do
+for required in agent.py ag.py ag-lg bind.sh uninstall.sh config.example.json; do
   [[ -f "${SOURCE_DIR}/${required}" ]] || {
     echo "Installation source is incomplete: ${required}" >&2
     exit 1
@@ -68,10 +68,12 @@ if [[ -n "${BIND_CODE_FILE}" && ( ! -f "${BIND_CODE_FILE}" || ! -r "${BIND_CODE_
   exit 1
 fi
 
-if [[ -e /usr/local/bin/ag ]] && \
-   ! grep -Fq 'PPFLIGHT_LOOKING_GLASS_AG_WRAPPER=1' /usr/local/bin/ag; then
-  echo "/usr/local/bin/ag already exists and is not owned by PPFlight; installation stopped." >&2
-  exit 1
+if [[ -e /usr/local/bin/ag-lg || -L /usr/local/bin/ag-lg ]]; then
+  if [[ -L /usr/local/bin/ag-lg ]] || \
+     ! grep -Fq 'PPFLIGHT_LOOKING_GLASS_AG_WRAPPER=1' /usr/local/bin/ag-lg; then
+    echo "/usr/local/bin/ag-lg already exists and is not owned by PPFlight; installation stopped." >&2
+    exit 1
+  fi
 fi
 
 if systemctl is-active --quiet "${SERVICE_NAME}" 2>/dev/null; then
@@ -178,6 +180,7 @@ for path in \
   "${APP_DIR}/python3" \
   "${CONFIG_DIR}/config.json" \
   "${STATE_DIR}/state.json" \
+  "/usr/local/bin/ag-lg" \
   "/usr/local/bin/ag" \
   "${UNIT_FILE}"; do
   backup_file "${path}"
@@ -185,7 +188,11 @@ done
 
 install -m 0755 -o root -g root "${SOURCE_DIR}/agent.py" "${APP_DIR}/agent.py"
 install -m 0755 -o root -g root "${SOURCE_DIR}/ag.py" "${APP_DIR}/ag.py"
-install -m 0755 -o root -g root "${SOURCE_DIR}/ag" "/usr/local/bin/ag"
+install -m 0755 -o root -g root "${SOURCE_DIR}/ag-lg" "/usr/local/bin/ag-lg"
+if [[ -f /usr/local/bin/ag && ! -L /usr/local/bin/ag ]] && \
+   grep -Fq 'PPFLIGHT_LOOKING_GLASS_AG_WRAPPER=1' /usr/local/bin/ag; then
+  rm -f -- "/usr/local/bin/ag"
+fi
 install -m 0755 -o root -g root "${SOURCE_DIR}/bind.sh" "${APP_DIR}/bind.sh"
 install -m 0755 -o root -g root "${SOURCE_DIR}/uninstall.sh" "${APP_DIR}/uninstall.sh"
 install -m 0644 -o root -g root "${SOURCE_DIR}/config.example.json" "${APP_DIR}/config.example.json"

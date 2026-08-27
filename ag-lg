@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# shellcheck disable=SC2034  # ownership marker used by install/uninstall scripts
+# shellcheck disable=SC2034  # shared ownership marker used for safe command migration
 PPFLIGHT_LOOKING_GLASS_AG_WRAPPER=1
 
 APP_DIR="/opt/ppflight-looking-glass"
